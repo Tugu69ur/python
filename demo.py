@@ -5,12 +5,10 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 
-# Image dimensions
 img_width, img_height = 64, 64
 batch_size = 32
 epochs = 20
 
-# Paths
 train_dir = "dataset/train"
 val_dir = "dataset/validation"
 
@@ -42,10 +40,8 @@ val_generator = val_datagen.flow_from_directory(
     class_mode="categorical"
 )
 
-# Number of classes
 num_classes = train_generator.num_classes
 
-# Model
 model = Sequential([
     Conv2D(32, (3, 3), activation="relu", input_shape=(img_width, img_height, 3)),
     MaxPooling2D(2, 2),
@@ -62,7 +58,6 @@ model = Sequential([
     Dense(num_classes, activation="softmax")
 ])
 
-# Compile
 model.compile(
     optimizer=Adam(learning_rate=0.001),
     loss="categorical_crossentropy",
@@ -76,13 +71,11 @@ history = model.fit(
     validation_data=val_generator
 )
 
-# Save model
 model.save("mongolian_script_model.h5")
 
-# Save class labels
 labels = train_generator.class_indices
 with open("labels.txt", "w", encoding="utf-8") as f:
     for k, v in labels.items():
-        f.write(f"{v}:{k}\n")  # removed space to avoid split issues
+        f.write(f"{v}:{k}\n") 
 
 print("✅ Training complete. Model saved as mongolian_script_model.h5")

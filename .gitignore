@@ -1,3 +1,8 @@
 tfjs_env
 tfjs-clean
-
+dataset
+synth_dataset
+yolo_dataset
+data
+.venv
+pytorch_env

@@ -1,0 +1,4 @@
+train: yolo_dataset/images
+val: yolo_dataset/images   # or a separate validation split
+nc: 2   # number of classes
+names: ['namar', 'mongol']
