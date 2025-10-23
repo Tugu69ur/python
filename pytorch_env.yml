@@ -1,0 +1,19 @@
+name: pytorch_env
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cpuonly        # remove if you have CUDA GPU
+  - pip
+  - pip:
+      - pillow
+      - pandas
+      - numpy
+      - tqdm
+      - fastapi
+      - uvicorn
