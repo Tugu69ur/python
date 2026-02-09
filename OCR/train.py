@@ -4,6 +4,7 @@ import evaluate
 from PIL import Image
 from torch.utils.data import Dataset
 
+
 from transformers import (
     TrOCRProcessor,
     VisionEncoderDecoderModel,
@@ -14,6 +15,18 @@ from transformers import (
 # ---------------------------
 # Load processor + model
 # ---------------------------
+
+from dataclasses import dataclass
+
+
+@dataclass
+class OCRDataCollator:
+    def __call__(self, features):
+        pixel_values = torch.stack([f["pixel_values"] for f in features])
+        labels = torch.stack([f["labels"] for f in features])
+
+        return {"pixel_values": pixel_values, "labels": labels}
+
 
 processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-printed")
 model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-printed")
@@ -130,7 +143,7 @@ trainer = Seq2SeqTrainer(
     args=training_args,
     train_dataset=train_dataset,
     eval_dataset=val_dataset,
-    tokenizer=processor.tokenizer,
+    data_collator=OCRDataCollator(),
     compute_metrics=compute_metrics,
 )
 
