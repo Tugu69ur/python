@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
+from random import choice
 import torch
 import torchvision.transforms as transforms
 import io
@@ -57,5 +58,32 @@ async def ocr(file: UploadFile = File(...)):
         print("OCR Server Error:", e)
         traceback.print_exc()
         return {"result": "Internal Server Error"}
+
+# # BLACKJACKKKK
+# SUITS = ["♠", "♥", "♦", "♣"]
+# RANKS = [
+#     {"r": "A", "v": 1},
+#     {"r": "2", "v": 2},
+#     {"r": "3", "v": 3},
+#     {"r": "4", "v": 4},
+#     {"r": "5", "v": 5},
+#     {"r": "6", "v": 6},
+#     {"r": "7", "v": 7},
+#     {"r": "8", "v": 8},
+#     {"r": "9", "v": 9},
+#     {"r": "10", "v": 10},
+#     {"r": "J", "v": 10},
+#     {"r": "Q", "v": 10},
+#     {"r": "K", "v": 10},
+# ]
+
+# def make_deck():
+#     return [{"rank": r["r"], "suit": s, "value": r["v"]} for s in SUITS for r in RANKS]
+
+# @app.get("/blackjack-hand")
+# def blackjack_hand():
+#     deck = make_deck()
+#     hand = [deck.pop(choice(range(len(deck)))) for _ in range(2)]
+#     return {"hand": hand}
 
 # Run: uvicorn server:app --reload --host 0.0.0.0 --port 8000
