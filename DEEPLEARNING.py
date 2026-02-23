@@ -1,13 +1,12 @@
 # import numpy as np
 
-# # A helper function to calculate cosine similarity
 # def cos_similarity(x, y, eps=1e-8):
 #     nx = x / (np.sqrt(np.sum(x ** 2)) + eps)
 #     ny = y / (np.sqrt(np.sum(y ** 2)) + eps)
 #     return np.dot(nx, ny)
 
 # def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
-#     # ❶ Get the query vector
+
 #     if query not in word_to_id:
 #         print('%s is not found' % query)
 #         return
@@ -16,16 +15,15 @@
 #     query_id = word_to_id[query]
 #     query_vec = word_matrix[query_id]
 
-#     # ❷ Calculate cosine similarity
 #     vocab_size = len(id_to_word)
 #     similarity = np.zeros(vocab_size)
+    
 #     for i in range(vocab_size):
 #         similarity[i] = cos_similarity(word_matrix[i], query_vec)
 
-#     # ❸ Sort and print top results
 #     count = 0
-#     # argsort() returns indices that would sort the array; 
-#     # multiplying by -1 sorts them in descending order.
+
+
 #     for i in (-1 * similarity).argsort():
 #         if id_to_word[i] == query:
 #             continue
@@ -35,23 +33,23 @@
 #         if count >= top:
 #             return
 
-# # --- Setup for Running ---
-
-# # 1. Define a small vocabulary
 # words = ['you', 'say', 'goodbye', 'i', 'say', 'hello', '.']
 # word_to_id = {}
 # id_to_word = {}
 # for i, word in enumerate(set(words)):
 #     word_to_id[word] = i
 #     id_to_word[i] = word
+    
+# # corpus = [0, 1, 2, 3, 4, 1, 5, 6]
+# # word_to_id = {'you':0, 'say':1, 'goodbye':2, 'and':3, 'i':4, 'hello':5, '.':6}
+# # id_to_word = {0:'you', 1:'say', 2:'goodbye', 3:'and', 4:'i', 5:'hello', 6:'.'}
 
-# # 2. Create a dummy word matrix (Co-occurrence matrix)
-# # In a real scenario, these would be vectors representing word meanings.
+
 # vocab_size = len(word_to_id)
 # word_matrix = np.random.rand(vocab_size, vocab_size) 
 
-# # 3. Run the function
 # most_similar('you', word_to_id, id_to_word, word_matrix)
+
 import numpy as np
 import matplotlib.pyplot as plt
 

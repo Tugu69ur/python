@@ -3,7 +3,7 @@ import torch
 import evaluate
 from PIL import Image
 from torch.utils.data import Dataset
-
+from dataclasses import dataclass
 
 from transformers import (
     TrOCRProcessor,
@@ -13,32 +13,27 @@ from transformers import (
 )
 
 # ---------------------------
-# Load processor + model
+# Load base model
 # ---------------------------
-
-from dataclasses import dataclass
-
-
-@dataclass
-class OCRDataCollator:
-    def __call__(self, features):
-        pixel_values = torch.stack([f["pixel_values"] for f in features])
-        labels = torch.stack([f["labels"] for f in features])
-
-        return {"pixel_values": pixel_values, "labels": labels}
-
 
 processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-printed")
 model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-printed")
 
-# Important model configs
+# IMPORTANT CONFIG
 model.config.decoder_start_token_id = processor.tokenizer.cls_token_id
+model.config.eos_token_id = processor.tokenizer.sep_token_id
 model.config.pad_token_id = processor.tokenizer.pad_token_id
 model.config.vocab_size = model.config.decoder.vocab_size
 
+model.config.max_length = 128
+model.config.early_stopping = True
+model.config.no_repeat_ngram_size = 3
+model.config.length_penalty = 2.0
+model.config.num_beams = 4
+
 
 # ---------------------------
-# Dataset Class
+# Dataset
 # ---------------------------
 
 
@@ -60,17 +55,16 @@ class MongolianOCRDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.samples[idx]
 
-        # Load image
         image = Image.open(f"{self.img_dir}/{sample['images']}").convert("RGB")
 
-        # If vertical Mongolian script -> rotate if needed
-        # image = image.rotate(90, expand=True)
+        pixel_values = self.processor(
+            image,
+            return_tensors="pt",
+            do_resize=True,
+            size=(384, 384),
+            do_normalize=True,
+        ).pixel_values.squeeze(0)
 
-        pixel_values = self.processor(image, return_tensors="pt").pixel_values.squeeze(
-            0
-        )
-
-        # Tokenize label
         labels = self.processor.tokenizer(
             sample["text"],
             padding="max_length",
@@ -79,21 +73,37 @@ class MongolianOCRDataset(Dataset):
             return_tensors="pt",
         ).input_ids.squeeze(0)
 
-        labels[labels == self.processor.tokenizer.pad_token_id] = -100
+        labels[labels == processor.tokenizer.pad_token_id] = -100
 
         return {"pixel_values": pixel_values, "labels": labels}
 
 
+@dataclass
+class OCRDataCollator:
+    def __call__(self, features):
+        pixel_values = torch.stack([f["pixel_values"] for f in features])
+        labels = torch.stack([f["labels"] for f in features])
+        return {"pixel_values": pixel_values, "labels": labels}
+
+
 # ---------------------------
-# Load datasets
+# Load Data
 # ---------------------------
 
-train_dataset = MongolianOCRDataset("data/csv/train.csv", "data/train", processor)
+train_dataset = MongolianOCRDataset(
+    "data/csv/train.csv",
+    "data/train",
+    processor,
+)
 
-val_dataset = MongolianOCRDataset("data/csv/val.csv", "data/val", processor)
+val_dataset = MongolianOCRDataset(
+    "data/csv/val.csv",
+    "data/val",
+    processor,
+)
 
 # ---------------------------
-# Evaluation metric
+# Metric
 # ---------------------------
 
 cer_metric = evaluate.load("cer")
@@ -109,30 +119,30 @@ def compute_metrics(pred):
     label_str = processor.batch_decode(label_ids, skip_special_tokens=True)
 
     cer = cer_metric.compute(predictions=pred_str, references=label_str)
-
     return {"cer": cer}
 
 
 # ---------------------------
-# Training arguments
+# Training Arguments
 # ---------------------------
 
 training_args = Seq2SeqTrainingArguments(
     output_dir="./trocr-mongolian",
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
     evaluation_strategy="steps",
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
-    learning_rate=5e-5,
-    num_train_epochs=20,
     logging_steps=200,
     eval_steps=1000,
     save_steps=1000,
     save_total_limit=2,
+    num_train_epochs=10,
+    learning_rate=1e-4,
+    warmup_steps=2000,
+    weight_decay=0.01,
     predict_with_generate=True,
     fp16=torch.cuda.is_available(),
     report_to="none",
 )
-
 
 # ---------------------------
 # Trainer
@@ -147,15 +157,14 @@ trainer = Seq2SeqTrainer(
     compute_metrics=compute_metrics,
 )
 
-
 # ---------------------------
-# Train model
+# Train
 # ---------------------------
 
 trainer.train()
 
-# Save model
+# Save final model
 trainer.save_model("./trocr-mongolian-final")
 processor.save_pretrained("./trocr-mongolian-final")
 
-print("Training complete!")
+print("Training complete.")
